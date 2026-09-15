@@ -1,0 +1,13 @@
+.venv/
+.venv-py314-backup/
+.idea/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.env
+.DS_Store
+Thumbs.db
+requirements-old.txt
+
+# Large external pretrained embeddings
+embeddings/
