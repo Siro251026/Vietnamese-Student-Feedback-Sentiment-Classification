@@ -1,16 +1,16 @@
 # Vietnamese Student Feedback Sentiment Classification
 
-Sentiment classification on UIT-VSFC using a TF-IDF baseline and an LSTM with Vietnamese word segmentation and pretrained Word2Vec.
+Sentiment classification trên UIT-VSFC với TF-IDF baseline và LSTM sử dụng Vietnamese word segmentation cùng pretrained Word2Vec.
 
 ## Overview
 
-This project classifies Vietnamese student feedback as **negative**, **neutral**, or **positive**. It compares a compact classical baseline with a neural sequence model while keeping the official training, validation, and test sets separate.
+Project này thực hiện sentiment classification cho phản hồi sinh viên tiếng Việt với ba nhãn: **negative**, **neutral** và **positive**. Hai hướng được so sánh gồm một classical ML baseline gọn nhẹ và một neural sequence model, đồng thời giữ riêng các official split gồm train, validation và test.
 
-The repository follows a reproducible workflow: training data fits the models, validation data supports development and sample-level analysis, and test data is used once for aggregate final evaluation.
+Repository tuân theo một workflow có thể tái lập: train data dùng để fit model, validation data phục vụ model development và sample-level analysis, còn test data chỉ được dùng một lần cho final aggregate evaluation.
 
 ## Dataset
 
-The project uses the three official UIT-VSFC CSV splits in `dataset/`:
+Project sử dụng ba official split dạng CSV của UIT-VSFC trong `dataset/`:
 
 | Split | Negative | Neutral | Positive | Total |
 |---|---:|---:|---:|---:|
@@ -18,7 +18,7 @@ The project uses the three official UIT-VSFC CSV splits in `dataset/`:
 | Validation | 705 | 73 | 805 | 1,583 |
 | Test | 1,409 | 167 | 1,590 | 3,166 |
 
-Each row contains Vietnamese feedback text and one sentiment label. Neutral is the smallest class in every split.
+Mỗi dòng gồm một phản hồi tiếng Việt và một sentiment label. Neutral là class nhỏ nhất trong cả ba split.
 
 ## Project Structure
 
@@ -47,33 +47,33 @@ Vietnamese Student Feedback Classification/
 
 ## Classical ML Pipeline
 
-`src/ML.py` applies lightweight normalization by lowercasing text and collapsing whitespace. It fits a TF-IDF vectorizer on the training set only, using unigram and bigram features with `min_df=2`, then trains balanced logistic regression with `max_iter=1000`.
+`src/ML.py` thực hiện preprocessing nhẹ bằng cách lowercase text và chuẩn hóa whitespace. TF-IDF vectorizer chỉ được fit trên train set, sử dụng unigram và bigram với `min_df=2`, sau đó train balanced Logistic Regression với `max_iter=1000`.
 
-The selected validation or test split is transformed with the fitted vectorizer. Evaluation data is never used to fit TF-IDF.
+Validation hoặc test split được chọn chỉ dùng vectorizer đã fit để transform. Evaluation data không bao giờ được dùng để fit TF-IDF.
 
 ## Deep Learning Pipeline
 
-`src/DL.ipynb` uses:
+`src/DL.ipynb` xây dựng pipeline gồm:
 
-- Vietnamese word segmentation with Underthesea
-- 400-dimensional pretrained Vietnamese Word2Vec vectors
-- a trainable embedding layer
-- a 128-unit LSTM classifier
-- class-weighted cross-entropy based only on training labels
+- Vietnamese word segmentation với Underthesea
+- 400-dimensional pretrained Vietnamese Word2Vec
+- trainable embedding layer
+- 128-unit LSTM classifier
+- class-weighted cross-entropy chỉ dựa trên train labels
 
-The vocabulary and sequence-length statistics are computed from training text only. In the current run, the training vocabulary contains 4,011 tokens, pretrained embedding coverage is 35.2%, and the 95th-percentile sequence length gives `MAX_LEN=27`.
+Vocabulary và các thống kê về sequence length chỉ được tính từ train text. Trong lần chạy hiện tại, training vocabulary có 4,011 tokens, pretrained embedding coverage đạt 35.2%, và percentile 95 của sequence length cho kết quả `MAX_LEN=27`.
 
 ## Class Imbalance
 
-Neutral accounts for only 458 of 11,426 training samples. Both models use training-derived class balancing: logistic regression uses `class_weight="balanced"`, while the LSTM loss uses weights computed from training-label counts. Macro F1 and Neutral-class metrics are reported alongside accuracy so performance on the minority class remains visible.
+Neutral chỉ chiếm 458 trong tổng số 11,426 training samples. Cả hai model đều xử lý class imbalance dựa trên train data: Logistic Regression dùng `class_weight="balanced"`, còn LSTM loss dùng class weight được tính từ số lượng train labels. Macro F1 và các Neutral-class metrics được báo cáo cùng accuracy để thể hiện rõ hiệu quả trên minority class.
 
 ## Validation Strategy
 
-- **Training set:** used to fit model parameters, TF-IDF, vocabulary, sequence-length settings, and class weights.
-- **Validation set:** used for model development, error analysis, and ML-vs-DL comparison.
-- **Test set:** reserved for final aggregate evaluation only.
+- **Training set:** dùng để fit model parameters, TF-IDF, vocabulary, sequence-length settings và class weights.
+- **Validation set:** dùng cho model development, error analysis, ML-vs-DL comparison và sample-level analysis.
+- **Test set:** chỉ dành cho final aggregate evaluation.
 
-When `SPLIT="valid"`, both implementations save aligned prediction files with `sample_id`, raw text, true label, predicted label, and correctness. When `SPLIT="test"`, they report metrics and a confusion matrix without saving sample-level predictions or displaying individual mistakes.
+Khi `SPLIT="valid"`, cả hai implementation đều lưu aligned prediction files gồm `sample_id`, raw text, true label, predicted label và kết quả đúng/sai. Khi `SPLIT="test"`, code chỉ báo cáo metrics và confusion matrix, không lưu detailed predictions và không xem từng error sample.
 
 ## Final Test Results
 
@@ -82,7 +82,7 @@ When `SPLIT="valid"`, both implementations save aligned prediction files with `s
 | Logistic Regression | TF-IDF (1-2 grams) | 0.8645 | 0.7147 | 0.8705 | **0.4132** |
 | LSTM | Underthesea + pretrained Word2Vec | **0.8879** | **0.7406** | **0.8867** | 0.3772 |
 
-Per-class final test performance:
+Kết quả final test theo từng class:
 
 | Model | Class | Precision | Recall | F1 | Support |
 |---|---|---:|---:|---:|---:|
@@ -93,11 +93,11 @@ Per-class final test performance:
 | LSTM | Neutral | **0.4118** | 0.3772 | **0.3937** | 167 |
 | LSTM | Positive | 0.9164 | **0.9164** | **0.9164** | 1,590 |
 
-The LSTM pipeline achieved higher test accuracy, macro F1, weighted F1, and per-class F1 for all three classes. Logistic regression retained higher Neutral recall and Positive precision. The models therefore trade off which Neutral samples they recover rather than one model dominating every metric.
+LSTM pipeline đạt test accuracy, macro F1, weighted F1 và per-class F1 cao hơn ở cả ba class. Logistic Regression vẫn có Neutral Recall và Positive Precision cao hơn. Vì vậy, hai model có sự đánh đổi trong khả năng nhận diện các Neutral samples; không có model nào vượt trội ở mọi metric.
 
 ## ML vs DL Analysis
 
-The sample-level comparison below uses validation predictions only. On validation, logistic regression reached 0.8806 accuracy and 0.7500 macro F1; the LSTM reached 0.9097 accuracy and 0.7859 macro F1.
+Phần sample-level comparison dưới đây chỉ sử dụng validation predictions. Trên validation set, Logistic Regression đạt accuracy 0.8806 và macro F1 0.7500; LSTM đạt accuracy 0.9097 và macro F1 0.7859.
 
 | Comparison | Validation samples |
 |---|---:|
@@ -106,23 +106,23 @@ The sample-level comparison below uses validation predictions only. On validatio
 | ML correct, DL wrong | 47 |
 | Both wrong | 96 |
 
-The LSTM made fewer validation errors overall. For Neutral, however, logistic regression made 31 errors and the LSTM made 33. Logistic regression therefore had higher validation Neutral recall (0.5753 vs. 0.5479), while the LSTM had higher Neutral F1 (0.4938 vs. 0.4308). The original expectation that ML missed more Neutral validation samples was not supported by the saved predictions.
+LSTM có ít validation errors hơn khi xét tổng thể. Tuy nhiên, với Neutral, Logistic Regression sai 31 samples còn LSTM sai 33 samples. Do đó, Logistic Regression có validation Neutral Recall cao hơn (0.5753 so với 0.5479), trong khi LSTM có Neutral F1 cao hơn (0.4938 so với 0.4308). Các prediction đã lưu không ủng hộ nhận định ban đầu rằng ML bỏ sót nhiều Neutral validation samples hơn.
 
-Some validation examples illustrate the complementary behavior:
+Một số validation examples cho thấy hai model có những điểm mạnh khác nhau:
 
-- **ML wrong, DL correct — Neutral:** `hiện nay theo em nhận thấy , trong khi lúc học thì sinh viên chỉ được học về doubledot kỹ năng ghi chép , kỹ tổ chức cuộc họp .` Logistic regression predicted Negative; the LSTM predicted Neutral. This is consistent with a possible benefit from token order and sequential information, although the difference cannot be attributed solely to the LSTM because the DL pipeline also uses Vietnamese segmentation and pretrained Word2Vec.
-- **ML wrong, DL correct — Negative:** `không check mail mỗi khi hỏi bài .` Logistic regression predicted Neutral; the LSTM predicted Negative. The DL pipeline may have benefited from the segmented sequence around the negation.
-- **ML correct, DL wrong — Negative:** `giảng viên nói tiếng anh không hay .` Logistic regression predicted Negative; the LSTM predicted Positive. This shows that sparse unigram and bigram cues remain useful and that the neural model is not uniformly better.
+- **ML wrong, DL correct — Neutral:** `hiện nay theo em nhận thấy , trong khi lúc học thì sinh viên chỉ được học về doubledot kỹ năng ghi chép , kỹ tổ chức cuộc họp .` Logistic Regression dự đoán Negative; LSTM dự đoán Neutral. Kết quả này phù hợp với khả năng DL pipeline tận dụng token order và sequential information, nhưng không thể quy improvement hoàn toàn cho LSTM vì pipeline còn sử dụng Vietnamese word segmentation và pretrained Word2Vec.
+- **ML wrong, DL correct — Negative:** `không check mail mỗi khi hỏi bài .` Logistic Regression dự đoán Neutral; LSTM dự đoán Negative. DL pipeline có thể đã tận dụng tốt hơn segmented sequence xung quanh cấu trúc phủ định.
+- **ML correct, DL wrong — Negative:** `giảng viên nói tiếng anh không hay .` Logistic Regression dự đoán Negative; LSTM dự đoán Positive. Trường hợp này cho thấy sparse unigram và bigram cues vẫn hữu ích, đồng thời DL model không phải lúc nào cũng tốt hơn.
 
 ## Error Analysis
 
-Both models misclassified the validation phrase `sự nhiệt tình .` as Positive even though its label is Neutral. The phrase is short, context-poor, and contains wording commonly associated with positive sentiment, making it difficult to classify from text alone. This observation describes ambiguity in the available text; it does not establish a labeling error.
+Cả hai model đều phân loại cụm từ `sự nhiệt tình .` trong validation set thành Positive dù true label là Neutral. Cụm từ này rất ngắn, thiếu ngữ cảnh và chứa lexical cue thường thiên về positive sentiment, nên khó phân loại nếu chỉ dựa vào text. Nhận xét này chỉ phản ánh tính mơ hồ của text hiện có, không khẳng định đây là labeling error.
 
-Detailed validation predictions are available in `Outputs/`. No detailed test predictions or test error samples are stored.
+Detailed validation predictions được lưu trong `Outputs/`. Project không lưu detailed test predictions hoặc test error samples.
 
 ## Installation
 
-Python 3.13 is recommended.
+Khuyến nghị sử dụng Python 3.13.
 
 ```powershell
 python -m venv .venv
@@ -133,46 +133,46 @@ pip install -r requirements.txt
 
 ## Running
 
-Run the classical baseline from the project root:
+Chạy classical ML baseline từ project root:
 
 ```powershell
 python .\src\ML.py
 ```
 
-Run the LSTM notebook from `src/` so its relative project path resolves consistently:
+Chạy LSTM notebook từ `src/` để relative project path luôn được resolve nhất quán:
 
 ```powershell
 cd .\src
 jupyter notebook DL.ipynb
 ```
 
-Both files default to `SPLIT="valid"`. Change the configuration line to `SPLIT="test"` only for final evaluation. The test branch intentionally skips detailed prediction export and error analysis.
+Cả hai file mặc định dùng `SPLIT="valid"`. Chỉ đổi dòng cấu hình thành `SPLIT="test"` khi thực hiện final evaluation. Test branch chủ động bỏ qua detailed prediction export và error analysis.
 
 ## Pretrained Word2Vec
 
-Download `wiki.vi.model.bin.gz` from [sonvx/word2vecVN](https://github.com/sonvx/word2vecVN) and place it at:
+Tải `wiki.vi.model.bin.gz` từ [sonvx/word2vecVN](https://github.com/sonvx/word2vecVN) và đặt file tại:
 
 ```text
 embeddings/wiki.vi.model.bin.gz
 ```
 
-The embedding file is an external large artifact and is excluded from Git. The trained checkpoint stores the learned embedding weights required by the current model state.
+Pretrained embedding file là một external artifact có kích thước lớn nên không được commit vào Git. Checkpoint đã train lưu learned embedding weights cần thiết cho model state hiện tại.
 
 ## Technologies
 
-Python, pandas, NumPy, scikit-learn, matplotlib, PyTorch, Gensim, Underthesea, Jupyter, and pretrained Vietnamese Word2Vec.
+Python, pandas, NumPy, scikit-learn, matplotlib, PyTorch, Gensim, Underthesea, Jupyter và pretrained Vietnamese Word2Vec.
 
 ## Limitations
 
-- Neutral remains difficult because it is a small class and often contains short or ambiguous feedback.
-- The DL pipeline differs from the ML baseline in tokenization, pretrained representations, and sequence modeling, so metric differences cannot be attributed to the LSTM alone.
-- Pretrained-vector coverage is 35.2% for the training vocabulary.
-- Results come from the official fixed splits rather than repeated cross-validation.
-- The notebook currently trains on CPU and does not perform checkpoint selection or early stopping.
+- Neutral vẫn là class khó vì đây là minority class và thường chứa feedback ngắn hoặc mơ hồ.
+- DL pipeline khác ML baseline ở tokenization, pretrained representations và sequence modeling, nên không thể quy toàn bộ khác biệt về metrics cho riêng LSTM.
+- Pretrained-vector coverage đạt 35.2% trên training vocabulary.
+- Kết quả được lấy từ fixed official splits thay vì repeated cross-validation.
+- Notebook hiện train trên CPU và chưa thực hiện checkpoint selection hoặc early stopping.
 
 ## Future Work
 
-- Add an ablation study to separate the effects of Vietnamese segmentation, pretrained embeddings, and the LSTM architecture.
-- Evaluate contextual Vietnamese encoders while preserving the same validation/test protocol.
-- Investigate class-aware objectives and calibration using validation data only.
-- Add a small inference entry point for the committed LSTM checkpoint.
+- Thực hiện ablation study để tách ảnh hưởng của Vietnamese segmentation, pretrained embeddings và LSTM architecture.
+- Đánh giá contextual Vietnamese encoders trong khi vẫn giữ nguyên validation/test protocol.
+- Nghiên cứu class-aware objectives và calibration chỉ với validation data.
+- Bổ sung một inference entry point nhỏ cho LSTM checkpoint đã commit.
